@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư viện số GDTX Thuận An - Sách lật 3D thông minh</title>
+    
+    <!-- Remix Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <!-- Link Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    
+    <!-- Mozilla PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        // Thiết lập worker cho PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+</head>
+<body data-theme="light">
+
+    <!-- Container chính cho ứng dụng SPA -->
+    <div id="app-container">
+        
+        <!-- Header - Navigation Bar -->
+        <header>
+            <div class="logo-area" onclick="switchView('discover')">
+                <i class="ri-book-3-line logo-icon"></i>
+                <span>Thư viện số <span class="highlight">GDTX Thuận An</span></span>
+            </div>
+            
+            <nav class="nav-menu">
+                <span class="nav-link active" id="nav-discover" onclick="switchView('discover')">Trang chủ</span>
+                <span class="nav-link" id="nav-catalog" onclick="switchView('catalog')">Tài liệu</span>
+                <span class="nav-link" id="nav-shelf" onclick="switchView('shelf')">Kệ sách</span>
+                <span class="nav-link" id="nav-admin" style="display: none;" onclick="switchView('admin')">Quản trị</span>
+            </nav>
+            
+            <div class="user-controls">
+                <!-- Nút chuyển đổi giao diện sáng/tối -->
+                <button class="btn-icon" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">
+                    <i class="ri-sun-line" id="theme-icon"></i>
+                </button>
+                
+                <!-- Khu vực điều khiển Auth -->
+                <div id="auth-controls">
+                    <!-- Sẽ render tự động qua JS: Nút đăng nhập/ký hoặc Profile badge -->
+                    <button class="btn btn-secondary" onclick="openAuthModal('login')">Đăng nhập</button>
+                    <button class="btn btn-primary" onclick="openAuthModal('register')">Đăng ký</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- VIEW 1: DISCOVER (KHÁM PHÁ / TRANG CHỦ) -->
+            <div id="discover-view" class="spa-view active-view">
+                
+                <!-- Hero Section -->
+                <section class="hero-section">
+                    <h1 class="hero-title">Khám Phá Tri Thức <br><span class="text-gradient">Không Giới Hạn</span></h1>
+                    <p class="hero-subtitle">Nền tảng đọc sách thông minh thế hệ mới. Đọc tài liệu tương tác với công nghệ sách lật 3D sống động và quản lý học tập tối ưu.</p>
+                    
+                    <div class="search-container">
+                        <div class="search-bar-inner">
+                            <i class="ri-search-line search-icon"></i>
+                            <input type="text" class="search-input" id="hero-search-input" placeholder="Tìm kiếm tựa sách, tác giả, thẻ từ khóa..." onkeypress="handleHeroSearch(event)">
+                            <button class="btn btn-primary search-btn" onclick="submitHeroSearch()">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Thống kê nhanh -->
+                <div class="admin-dashboard-grid" style="margin-top: -20px; margin-bottom: 50px;">
+                    <div class="admin-stat-card glass-panel" style="background: rgba(6, 182, 212, 0.03);">
+                        <div class="admin-stat-icon" style="color: var(--primary); border-color: var(--primary);"><i class="ri-book-open-fill"></i></div>
+                        <div class="admin-stat-details">
+                            <span class="admin-stat-num" id="stat-total-books">0</span>
+                            <span class="admin-stat-title">Tài liệu lưu trữ</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-panel" style="background: rgba(168, 85, 247, 0.03);">
+                        <div class="admin-stat-icon" style="color: var(--secondary); border-color: var(--secondary);"><i class="ri-user-heart-fill"></i></div>
+                        <div class="admin-stat-details">
+                            <span class="admin-stat-num" id="stat-total-users">0</span>
+                            <span class="admin-stat-title">Độc giả tích cực</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-panel" style="background: rgba(16, 185, 129, 0.03);">
+                        <div class="admin-stat-icon" style="color: #10b981; border-color: #10b981;"><i class="ri-eye-fill"></i></div>
+                        <div class="admin-stat-details">
+                            <span class="admin-stat-num" id="stat-total-views">0</span>
+                            <span class="admin-stat-title">Tổng lượt xem sách</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card glass-panel" style="background: rgba(245, 158, 11, 0.03);">
+                        <div class="admin-stat-icon" style="color: #f59e0b; border-color: #f59e0b;"><i class="ri-bookmark-fill"></i></div>
+                        <div class="admin-stat-details">
+                            <span class="admin-stat-num" id="stat-total-bookmarks">0</span>
+                            <span class="admin-stat-title">Sách yêu thích</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phân loại danh mục chính -->
+                <div class="section-title-wrapper">
+                    <h2 class="section-title">Khối tài liệu nổi bật</h2>
+                    <span class="nav-link" style="font-size: 0.88rem; cursor: pointer; color: var(--primary);" onclick="switchView('catalog')">Xem tất cả tài liệu <i class="ri-arrow-right-line"></i></span>
+                </div>
+                <div class="category-grid" id="discover-categories">
+                    <!-- Render tự động danh mục ở đây -->
+                </div>
+
+                <!-- Sách nổi bật / Xu hướng -->
+                <div class="section-title-wrapper">
+                    <h2 class="section-title">Ấn phẩm đề xuất</h2>
+                </div>
+                <div class="books-grid" id="featured-books">
+                    <!-- Render danh sách sách hot ở đây -->
+                </div>
+
+            </div>
+
+            <!-- VIEW 2: CATALOG (THƯ MỤC SÁCH & BỘ LỌC TÌM KIẾM MẠNH MẼ) -->
+            <div id="catalog-view" class="spa-view">
+                <div class="catalog-layout">
+                    
+                    <!-- Sidebar Bộ lọc trái -->
+                    <aside class="filter-sidebar glass-panel">
+                        <!-- Danh mục -->
+                        <div class="filter-section">
+                            <h3 class="filter-title">Theo Khối Lớp</h3>
+                            <div class="filter-list" id="filter-categories-list">
+                                <!-- Chèn danh mục checkbox tự động qua JS -->
+                            </div>
+                        </div>
+
+                        <!-- Môn học -->
+                        <div class="filter-section">
+                            <h3 class="filter-title">Theo Môn Học</h3>
+                            <div class="filter-list" id="filter-subjects-list">
+                                <!-- Chèn môn học checkbox tự động qua JS -->
+                            </div>
+                        </div>
+
+                        <!-- Thẻ Tags -->
+                        <div class="filter-section">
+                            <h3 class="filter-title">Từ Khóa Phổ Biến</h3>
+                            <div class="book-tags-list" id="filter-tags-list" style="margin-bottom: 0;">
+                                <!-- Chèn tags tự động qua JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- Reset bộ lọc -->
+                        <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="resetAllFilters()">
+                            <i class="ri-refresh-line"></i> Đặt lại bộ lọc
+                        </button>
+                    </aside>
+
+                    <!-- Kết quả tìm kiếm và danh sách sách bên phải -->
+                    <section class="catalog-main-content">
+                        
+                        <!-- Thanh công cụ tìm kiếm và lọc trên Catalog -->
+                        <div class="glass-panel" style="padding: 15px 25px; margin-bottom: 30px; border-radius: 16px;">
+                            <div style="display: flex; gap: 15px; width: 100%;">
+                                <div style="position: relative; flex: 1;">
+                                    <input type="text" id="catalog-search-input" class="form-input" placeholder="Tìm kiếm tài liệu lớp học..." style="padding-left: 45px; border-radius: 50px;" oninput="triggerSearchFilter()">
+                                    <i class="ri-search-line" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.1rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="catalog-results-header">
+                            <span class="results-count" id="catalog-results-count">Tìm thấy 0 tài liệu lớp học</span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Sắp xếp:</span>
+                                <select class="sort-select" id="catalog-sort-select" onchange="triggerSearchFilter()">
+                                    <option value="views_desc">Lượt xem nhiều nhất</option>
+                                    <option value="rating_desc">Đánh giá cao nhất</option>
+                                    <option value="title_asc">Tiêu đề (A-Z)</option>
+                                    <option value="newest">Mới cập nhật</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="books-grid" id="catalog-books-list">
+                            <!-- Chèn danh sách kết quả qua JS -->
+                        </div>
+                        
+                        <div id="catalog-empty-state" style="display:none; text-align: center; padding: 50px; color: var(--text-muted);">
+                            <i class="ri-search-eye-line" style="font-size: 4rem; color: var(--primary); display:block; margin-bottom: 15px;"></i>
+                            <h3>Không tìm thấy cuốn sách nào khớp với bộ lọc</h3>
+                            <p style="font-size: 0.88rem; margin-top: 5px;">Hãy thử nhập từ khóa khác hoặc xóa bớt tiêu chí lọc.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- VIEW 3: MY BOOKSHELF (KỆ SÁCH CÁ NHÂN) -->
+            <div id="shelf-view" class="spa-view">
+                
+                <!-- Người dùng chưa đăng nhập -->
+                <div id="shelf-anonymous" style="text-align: center; padding: 80px 20px;" class="glass-panel">
+                    <i class="ri-lock-2-line" style="font-size: 4rem; color: var(--secondary); display:block; margin-bottom: 20px;"></i>
+                    <h2>Yêu cầu Đăng nhập hệ thống</h2>
+                    <p style="color: var(--text-muted); max-width: 500px; margin: 10px auto 25px auto;">Đăng nhập tài khoản của bạn để xem tủ sách cá nhân, theo dõi lịch sử đọc, lưu bookmarks và các ghi chú tài liệu riêng tư của bạn.</p>
+                    <button class="btn btn-primary" onclick="openAuthModal('login')">Đăng nhập ngay</button>
+                </div>
+                
+                <!-- Người dùng đã đăng nhập -->
+                <div id="shelf-authenticated" style="display: none;">
+                    <div class="section-title-wrapper" style="margin-bottom: 30px;">
+                        <div>
+                            <h1 style="font-size: 2rem; font-weight: 800;">Kệ Sách Của Tôi</h1>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Nơi lưu trữ lịch sử, bookmarks và ghi chú cá nhân của bạn.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="viewer-tabs" style="max-width: 500px; margin-bottom: 30px;">
+                        <button class="viewer-tab-btn active" id="shelf-tab-bookmarks" onclick="switchShelfTab('bookmarks')">Bookmarks Đã Lưu</button>
+                        <button class="viewer-tab-btn" id="shelf-tab-history" onclick="switchShelfTab('history')">Lịch Sử Đọc</button>
+                        <button class="viewer-tab-btn" id="shelf-tab-notes" onclick="switchShelfTab('notes')">Ghi Chú Đã Ghi</button>
+                    </div>
+
+                    <!-- Nội dung các tabs -->
+                    <div class="shelf-tab-content">
+                        <!-- Bookmarks -->
+                        <div id="shelf-pane-bookmarks" class="viewer-pane active">
+                            <div class="books-grid" id="shelf-bookmarks-grid">
+                                <!-- Chèn bookmarks -->
+                            </div>
+                        </div>
+
+                        <!-- Lịch sử đọc -->
+                        <div id="shelf-pane-history" class="viewer-pane">
+                            <div class="books-grid" id="shelf-history-grid">
+                                <!-- Chèn lịch sử -->
+                            </div>
+                        </div>
+
+                        <!-- Ghi chú cá nhân -->
+                        <div id="shelf-pane-notes" class="viewer-pane">
+                            <div id="shelf-notes-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                                <!-- Chèn ghi chú -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- VIEW 4: ADMIN CONSOLE (BẢNG QUẢN TRỊ & PHÂN QUYỀN VAI TRÒ) -->
+            <div id="admin-view" class="spa-view">
+                <div class="section-title-wrapper" style="margin-bottom: 25px;">
+                    <div>
+                        <h1 style="font-size: 2rem; font-weight: 800;">Bảng Điều Khiển Hệ Thống</h1>
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Quản trị kho sách tài liệu và kiểm soát phân quyền tài khoản người dùng.</p>
+                    </div>
+                </div>
+
+                <!-- Admin sub-navigation tabs -->
+                <div class="admin-tabs-nav">
+                    <button class="admin-tab-btn active" id="admin-tab-books" onclick="switchAdminTab('books')"><i class="ri-book-2-line"></i> Quản Lý Sách</button>
+                    <button class="admin-tab-btn" id="admin-tab-users" onclick="switchAdminTab('users')"><i class="ri-user-settings-line"></i> Phân Quyền Người Dùng</button>
+                </div>
+
+                <!-- TAB 1: QUẢN LÝ SÁCH -->
+                <div id="admin-pane-books" class="viewer-pane active">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                        <h3 style="font-family: var(--font-heading);">Danh sách đầu sách hiện có</h3>
+                        <button class="btn btn-primary" onclick="openAddBookModal()"><i class="ri-add-line"></i> Thêm Sách Mới</button>
+                    </div>
+                    
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Ảnh bìa / Tiêu đề</th>
+                                    <th>Tác giả</th>
+                                    <th>Khối Lớp</th>
+                                    <th>Lượt đọc</th>
+                                    <th>Đánh giá</th>
+                                    <th>Tác vụ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-books-tbody">
+                                <!-- Chèn tự động danh sách sách -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: QUẢN LÝ NGƯỜI DÙNG & PHÂN QUYỀN -->
+                <div id="admin-pane-users" class="viewer-pane">
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="font-family: var(--font-heading);">Danh sách thành viên và Phân quyền tài khoản (RBAC)</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Thay đổi quyền truy cập tức thì (Admin, Moderator, Reader) và quản lý trạng thái khóa tài khoản.</p>
+                    </div>
+                    
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Họ & Tên</th>
+                                    <th>Email</th>
+                                    <th>Vai trò (Role)</th>
+                                    <th>Trạng thái</th>
+                                    <th>Tác vụ quản trị</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-tbody">
+                                <!-- Chèn tự động danh sách người dùng -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- VIEW 5: TRÌNH XEM TRỰC TUYẾN TIÊU CHUẨN (ONLINE STANDARD VIEWER) -->
+            <div id="viewer-view" class="spa-view" style="padding: 0;">
+                <div class="viewer-layout">
+                    
+                    <!-- Sidebar Trái -->
+                    <aside class="viewer-sidebar glass-panel" style="border-radius: 0 20px 20px 0; border-left: none;">
+                        <button class="btn btn-secondary flipbook-back-btn" onclick="exitViewer()">
+                            <i class="ri-arrow-left-line"></i> Trở về thư viện
+                        </button>
+                        
+                        <div class="viewer-tabs">
+                            <button class="viewer-tab-btn active" id="viewer-tab-info" onclick="switchViewerTab('info')">Mô tả</button>
+                            <button class="viewer-tab-btn" id="viewer-tab-bookmarks" onclick="switchViewerTab('bookmarks')">Bookmarks</button>
+                            <button class="viewer-tab-btn" id="viewer-tab-notes" onclick="switchViewerTab('notes')">Ghi chú</button>
+                        </div>
+                        
+                        <div class="viewer-pane-content">
+                            <!-- Tab mô tả -->
+                            <div id="viewer-pane-info" class="viewer-pane active">
+                                <h3 id="viewer-sidebar-title" style="font-size: 1.1rem; margin-bottom: 5px;">Tiêu đề sách</h3>
+                                <p id="viewer-sidebar-author" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Tác giả</p>
+                                <p id="viewer-sidebar-desc" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; text-align: justify;">Mô tả chi tiết cuốn sách...</p>
+                            </div>
+                            
+                            <!-- Tab Bookmarks -->
+                            <div id="viewer-pane-bookmarks" class="viewer-pane">
+                                <h4 style="font-size: 0.9rem; margin-bottom: 10px;">Đã đánh dấu trang:</h4>
+                                <div id="viewer-bookmarks-list">
+                                    <!-- Danh sách bookmarks sách này -->
+                                </div>
+                            </div>
+                            
+                            <!-- Tab Ghi chú -->
+                            <div id="viewer-pane-notes" class="viewer-pane">
+                                <h4 style="font-size: 0.9rem; margin-bottom: 10px;">Ghi chú học tập cá nhân:</h4>
+                                <textarea class="note-textarea" id="viewer-note-textarea" placeholder="Nhập ghi chú học tập hay cảm nghĩ của bạn về trang sách tại đây... Dữ liệu sẽ tự động lưu lại."></textarea>
+                                <button class="btn btn-primary" style="width: 100%;" onclick="saveCurrentBookNote()">Lưu Ghi Chú</button>
+                            </div>
+                        </div>
+                    </aside>
+                    
+                    <!-- Khung đọc chính bên Phải -->
+                    <section class="viewer-reader-panel">
+                        <div class="viewer-header-bar glass-panel" style="border-radius: 0 0 16px 16px;">
+                            <span class="viewer-title-label" id="viewer-header-title">Đang Đọc</span>
+                            
+                            <!-- Cài đặt thanh công cụ -->
+                            <div class="viewer-settings-toolbar">
+                                <!-- Đổi cỡ chữ -->
+                                <button class="btn-icon" onclick="adjustTextSize(-1)" title="Giảm cỡ chữ"><i class="ri-font-size-2"></i>-</button>
+                                <button class="btn-icon" onclick="adjustTextSize(1)" title="Tăng cỡ chữ"><i class="ri-font-size-2"></i>+</button>
+                                
+                                <!-- Đổi theme nền đọc -->
+                                <button class="btn-icon" onclick="changeReaderTheme('light')" style="background:#ffffff; color:#000000; border:1px solid #ddd;" title="Theme sáng"></button>
+                                <button class="btn-icon" onclick="changeReaderTheme('sepia')" style="background:#f4ecd8; border:1px solid #ccbfa0;" title="Theme vàng dịu mắt"></button>
+                                <button class="btn-icon" onclick="changeReaderTheme('dark')" style="background:#0f172a; color:#ffffff; border:1px solid #334155;" title="Theme tối"></button>
+                                
+                                <!-- Nút Đánh dấu nhanh -->
+                                <button class="btn-icon" id="viewer-bookmark-toggle-btn" onclick="triggerViewerBookmark()" title="Đánh dấu trang này">
+                                    <i class="ri-bookmark-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Cuộn nội dung đọc chính -->
+                        <div class="viewer-content-scroller" id="viewer-content-area">
+                            <div class="reader-paper" id="reader-text-container">
+                                <!-- Nội dung chữ của sách sẽ được chèn qua JS ở đây -->
+                            </div>
+                            <div id="reader-canvas-container" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                                <!-- Canvas để vẽ PDF.js -->
+                                <canvas id="pdf-viewer-canvas" style="max-width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Thanh chuyển trang Footer -->
+                        <div class="viewer-navigation-footer glass-panel" style="border-radius: 16px 16px 0 0; border-bottom: none;">
+                            <button class="btn btn-secondary" id="viewer-prev-btn" onclick="changeViewerPage(-1)"><i class="ri-arrow-left-s-line"></i> Trang trước</button>
+                            <span style="font-weight: 700; font-size: 0.9rem;" id="viewer-page-indicator">Trang 1 / 1</span>
+                            <button class="btn btn-secondary" id="viewer-next-btn" onclick="changeViewerPage(1)">Trang sau <i class="ri-arrow-right-s-line"></i></button>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+            <!-- VIEW 6: TRÌNH ĐỌC SÁCH LẬT PDF 3D HOÀN MỸ (3D FLIPBOOK VIEW) -->
+            <div id="flipbook-view" class="spa-view">
+                <button class="btn btn-secondary flipbook-back-btn" onclick="exitFlipbook()">
+                    <i class="ri-arrow-left-line"></i> Trở về thư viện
+                </button>
+                
+                <div class="flipbook-workspace">
+                    
+                    <!-- Hướng dẫn góc -->
+                    <div style="position: absolute; top: 20px; left: 25px; color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-information-line" style="color: var(--primary);"></i>
+                        <span>Nhấp chuột vào mép phải/trái của trang sách hoặc dùng phím mũi tên &larr; &rarr; để lật trang.</span>
+                    </div>
+
+                    <!-- Môi trường 3D cuốn sách -->
+                    <div class="book-viewport">
+                        <div class="book-container" id="book-3d-container">
+                            
+                            <!-- Bìa gáy 3D -->
+                            <div class="book-spine-3d"></div>
+                            
+                            <!-- Bìa cứng trước 3D -->
+                            <div class="book-page-3d cover-page-3d" id="cover-3d-front" style="z-index: 10;">
+                                <div class="page-side cover-front" id="3d-cover-front-gradient" style="background: linear-gradient(135deg, #1e3a8a, #0f172a);">
+                                    <div class="cover-spine-effect"></div>
+                                    <div class="cover-cat-badge" id="3d-cover-cat">Programming</div>
+                                    <div class="cover-center">
+                                        <i class="ri-cpu-line cover-icon" id="3d-cover-icon"></i>
+                                        <h2 class="cover-title" id="3d-cover-title">Tiêu Đề Sách 3D</h2>
+                                    </div>
+                                    <div class="cover-author" id="3d-cover-author" style="text-align: center;">Tác giả sách</div>
+                                </div>
+                                <div class="page-side page-back" style="background: #faf8f5;">
+                                    <div class="page-spine-effect"></div>
+                                    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; padding: 20px; color:#334155;">
+                                        <i class="ri-book-open-line" style="font-size:3rem; color:var(--primary); margin-bottom:10px;"></i>
+                                        <h3 style="font-size:1.2rem; margin-bottom:10px;">Lời Giới Thiệu</h3>
+                                        <p style="font-size:0.75rem; line-height:1.5;" id="3d-book-intro-desc">Nội dung tóm tắt sơ lược của cuốn sách sẽ xuất hiện tại trang lót mở đầu...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Các trang sách động lật 3D (Được render thông qua JS) -->
+                            <div id="dynamic-3d-pages"></div>
+
+                            <!-- Bìa cứng sau 3D -->
+                            <div class="book-page-3d cover-page-3d" id="cover-3d-back" style="z-index: -1;">
+                                <div class="page-side page-front" style="background: #faf8f5;">
+                                    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; padding:20px; color:#64748b;">
+                                        <i class="ri-medal-line" style="font-size:3.5rem; color:var(--secondary); margin-bottom:15px;"></i>
+                                        <h3 style="font-size:1.1rem; color:#334155; margin-bottom:5px;">Thư viện số GDTX Thuận An</h3>
+                                        <p style="font-size:0.72rem;">Chúc bạn có những giây phút tiếp nhận tri thức bổ ích và thú vị!</p>
+                                    </div>
+                                </div>
+                                <div class="page-side cover-back" id="3d-cover-back-gradient" style="background: linear-gradient(135deg, #0f172a, #1e3a8a);">
+                                    <div style="display:flex; justify-content:center; align-items:center; height:100%; font-size:1.8rem; opacity:0.3;">
+                                        <i class="ri-book-3-fill"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <!-- Điều khiển 3D Toolbar dưới -->
+                    <div class="flipbook-toolbar">
+                        <button class="btn-icon" onclick="flipToPrev3DPage()" title="Lật trang trước"><i class="ri-arrow-left-line"></i></button>
+                        <span class="toolbar-info" id="flipbook-page-indicator">Trang 0 / 0</span>
+                        <button class="btn-icon" onclick="flipToNext3DPage()" title="Lật trang sau"><i class="ri-arrow-right-line"></i></button>
+                        
+                        <!-- Bộ điều khiển Thu phóng mới -->
+                        <div style="width: 1px; height: 18px; background: var(--border-color); margin: 0 4px; opacity: 0.5;"></div>
+                        <button class="btn-icon" onclick="zoom3DBook(-0.2)" title="Thu nhỏ sách"><i class="ri-zoom-out-line"></i></button>
+                        <button class="btn-icon" onclick="zoom3DBook(0.2)" title="Phóng to sách"><i class="ri-zoom-in-line"></i></button>
+                        <button class="btn-icon" onclick="reset3DBookZoom()" title="Đặt lại thu phóng & vị trí"><i class="ri-refresh-line"></i></button>
+                        
+                        <div style="width: 1px; height: 18px; background: var(--border-color); margin: 0 4px; opacity: 0.5;"></div>
+                        <button class="btn-icon" onclick="toggle3DFullscreen()" title="Toàn màn hình trình đọc 3D"><i class="ri-fullscreen-fill"></i></button>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+        
+        <!-- FOOTER TRANG WEB -->
+        <footer style="text-align: center; padding: 25px; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); background: rgba(7, 11, 19, 0.95);">
+            <p>&copy; Thư viện số GDTX Thuận An. Thiết kế bởi Trung tâm GDNN-GDTX Thuận An. Toàn bộ bản quyền được bảo hộ.</p>
+        </footer>
+
+        <!-- MODAL 1: AUTH (ĐĂNG NHẬP / ĐĂNG KÝ) -->
+        <div id="auth-modal" class="modal-overlay" onclick="closeModalOnOuterClick(event, 'auth-modal')">
+            <div class="modal-content" style="max-width: 420px;">
+                <button class="modal-close" onclick="closeAuthModal()"><i class="ri-close-line"></i></button>
+                
+                <div class="auth-tabs">
+                    <div class="auth-tab-btn active" id="tab-login-btn" onclick="switchAuthTab('login')">Đăng nhập</div>
+                    <div class="auth-tab-btn" id="tab-register-btn" onclick="switchAuthTab('register')">Đăng ký</div>
+                </div>
+                
+                <!-- Form Đăng nhập -->
+                <div class="auth-form-pane active" id="pane-login">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label class="form-label">Email tài khoản</label>
+                            <input type="email" id="login-email" class="form-input" required placeholder="name@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mật khẩu</label>
+                            <input type="password" id="login-password" class="form-input" required placeholder="••••••••">
+                        </div>
+                        <div id="login-error-msg" style="color:var(--accent); font-size:0.8rem; margin-bottom:15px; display:none;"></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Đăng nhập</button>
+                    </form>
+                    <div style="text-align:center; font-size:0.8rem; margin-top:20px; color:var(--text-muted);">
+                        Tài khoản test nhanh:<br>
+                        Admin: <b>admin@thuvien.so</b> / <b>admin</b><br>
+                        Độc giả: <b>user@thuvien.so</b> / <b>user</b>
+                    </div>
+                </div>
+
+                <!-- Form Đăng ký -->
+                <div class="auth-form-pane" id="pane-register">
+                    <form onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label class="form-label">Họ và tên của bạn</label>
+                            <input type="text" id="register-name" class="form-input" required placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Địa chỉ Email</label>
+                            <input type="email" id="register-email" class="form-input" required placeholder="name@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Thiết lập Mật khẩu</label>
+                            <input type="password" id="register-password" class="form-input" required placeholder="Tối thiểu 6 ký tự">
+                        </div>
+                        <div id="register-error-msg" style="color:var(--accent); font-size:0.8rem; margin-bottom:15px; display:none;"></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Đăng ký thành viên</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: BOOK DETAILS (CHI TIẾT ẤN PHẨM) -->
+        <div id="book-detail-modal" class="modal-overlay" onclick="closeModalOnOuterClick(event, 'book-detail-modal')">
+            <div class="modal-content book-detail-modal">
+                <button class="modal-close" onclick="closeBookDetailModal()"><i class="ri-close-line"></i></button>
+                
+                <!-- Bìa trái -->
+                <div class="detail-cover-pane">
+                    <div class="detail-cover-container" id="detail-cover-target">
+                        <!-- Cover render tự động -->
+                    </div>
+                </div>
+                
+                <!-- Chi tiết phải -->
+                <div class="detail-info-pane">
+                    <h2 class="detail-title" id="detail-title">Tiêu Đề Cuốn Sách</h2>
+                    <span class="detail-author" id="detail-author">Tác giả sách</span>
+                    
+                    <div class="book-tags-list" id="detail-tags-target">
+                        <!-- Tags -->
+                    </div>
+                    
+                    <div class="detail-stats">
+                        <div class="detail-stat-item">
+                            <span class="detail-stat-label">Đánh giá</span>
+                            <span class="detail-stat-val detail-stat-item-rating" style="color: #f59e0b;"><i class="ri-star-fill"></i> <span id="detail-rating">4.8</span></span>
+                        </div>
+                        <div class="detail-stat-item">
+                            <span class="detail-stat-label">Lượt xem</span>
+                            <span class="detail-stat-val" id="detail-views">1240</span>
+                        </div>
+                        <div class="detail-stat-item">
+                            <span class="detail-stat-label">Độ dài</span>
+                            <span class="detail-stat-val" id="detail-pages">6 trang</span>
+                        </div>
+                    </div>
+                    
+                    <p class="detail-desc" id="detail-desc">
+                        Nội dung mô tả giới thiệu cuốn sách...
+                    </p>
+                    
+                    <div class="detail-actions">
+                        <button class="btn btn-primary" id="detail-btn-read-standard" onclick="openBookInStandardViewer()"><i class="ri-book-open-line"></i> Đọc trực tuyến</button>
+                        <button class="btn btn-secondary" id="detail-btn-read-3d" onclick="openBookIn3DFlipbook()" style="border-color: var(--secondary); color: var(--secondary);"><i class="ri-planet-line"></i> Đọc sách lật 3D</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 3: ADD/EDIT BOOK (THÊM / SỬA SÁCH CỦA ADMIN) -->
+        <div id="add-book-modal" class="modal-overlay" onclick="closeModalOnOuterClick(event, 'add-book-modal')">
+            <div class="modal-content" style="max-width: 600px; max-height:90vh; overflow-y:auto;">
+                <button class="modal-close" onclick="closeAddBookModal()"><i class="ri-close-line"></i></button>
+                <div style="padding:30px;">
+                    <h2 style="font-family:var(--font-heading); margin-bottom:20px;" id="add-book-modal-title">Thêm Tài Liệu Mới</h2>
+                    
+                    <form onsubmit="handleSaveBook(event)">
+                        <input type="hidden" id="edit-book-id">
+                        
+                        <div class="form-group">
+                            <label class="form-label">Tiêu đề sách</label>
+                            <input type="text" id="form-book-title" class="form-input" required placeholder="Nhập tiêu đề cuốn sách">
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px;">
+                            <div class="form-group">
+                                <label class="form-label">Tác giả</label>
+                                <input type="text" id="form-book-author" class="form-input" required placeholder="Tên tác giả">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Khối lớp học</label>
+                                <select id="form-book-category" class="form-input" style="background:var(--bg-surface-solid);">
+                                    <!-- Options tự động nạp -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Môn học chính</label>
+                                <select id="form-book-subject" class="form-input" style="background:var(--bg-surface-solid);">
+                                    <!-- Options tự động nạp -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Gắn thẻ từ khóa (nhấn Enter để thêm tag)</label>
+                            <div class="tag-input-wrapper">
+                                <div id="form-tags-container" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+                                <input type="text" id="form-book-tag-input" class="tag-input-field" placeholder="Ví dụ: #AI, #WebDev" onkeydown="handleTagInputKeydown(event)">
+                            </div>
+                        </div>
+
+                        <!-- Lựa chọn tùy chỉnh màu sắc bìa và biểu tượng -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label class="form-label">Màu nền bìa (Gradient / Mã màu CSS)</label>
+                                <input type="text" id="form-book-cover-gradient" class="form-input" placeholder="Ví dụ: linear-gradient(135deg, #1e3a8a, #0f172a)">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Icon bìa (Remix Icon Class)</label>
+                                <input type="text" id="form-book-cover-icon" class="form-input" placeholder="Ví dụ: ri-cpu-line">
+                            </div>
+                        </div>
+                        <span style="font-size:0.7rem; color:var(--text-muted); margin-top:-10px; margin-bottom:15px; display:block;">
+                            Bìa mẫu: Xanh dương (`linear-gradient(135deg, #1e3a8a, #0f172a)`), Đỏ cam (`linear-gradient(135deg, #ea580c, #7c2d12)`), Xanh lá (`linear-gradient(135deg, #15803d, #064e3b)`).
+                        </span>
+
+                        <!-- Lựa chọn tải ảnh bìa thay thế -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label class="form-label">Đường dẫn ảnh bìa online (URL)</label>
+                                <input type="text" id="form-book-cover-image" class="form-input" placeholder="Nhập liên kết ảnh bìa trực tuyến nếu có">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Hoặc tải ảnh bìa từ máy tính</label>
+                                <input type="file" id="form-book-cover-file" class="form-input" accept="image/*" style="padding:8px 12px; font-size:0.8rem;" onchange="handleLocalCoverUpload(event)">
+                            </div>
+                        </div>
+                        <span style="font-size:0.7rem; color:var(--text-muted); margin-top:-10px; margin-bottom:20px; display:block;">
+                            Để ảnh bìa được lưu giữ vĩnh viễn và sắc nét nhất, bạn nên sử dụng ô nhập **Đường dẫn ảnh bìa online (URL)**.
+                        </span>
+
+                        <div class="form-group">
+                            <label class="form-label">Mô tả tóm tắt</label>
+                            <textarea id="form-book-desc" class="form-input" style="height:100px; resize:none;" required placeholder="Nhập mô tả tóm tắt nội dung cuốn sách..."></textarea>
+                        </div>
+                        
+                        <!-- Chọn kiểu nội dung (PDF thật hay Tự soạn trang sách) -->
+                        <div class="form-group" style="background: rgba(255,255,255,0.02); padding:15px; border-radius:12px; border:1px solid var(--border-color);">
+                            <label class="form-label" style="margin-bottom:12px;">Định dạng Nội dung Sách</label>
+                            <div style="display:flex; gap:20px; margin-bottom:15px;">
+                                <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                    <input type="radio" name="book-format" value="text" checked onchange="toggleFormContentFields()"> Soạn văn bản thủ công (HTML/Text)
+                                </label>
+                                <label style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+                                    <input type="radio" name="book-format" value="pdf" onchange="toggleFormContentFields()"> Tải lên tệp tài liệu PDF thật
+                                </label>
+                            </div>
+                            
+                            <!-- Vùng Soạn thảo các trang (Text) -->
+                            <div id="form-content-text-group">
+                                <label class="form-label">Nội dung trang sách (Mỗi trang cách nhau bởi ký tự [PAGE_BREAK])</label>
+                                <textarea id="form-book-pages-text" class="form-input" style="height:150px; font-family:monospace; font-size:0.8rem;" placeholder="<h2>Trang 1</h2><p>Nội dung trang 1...</p>&#10;[PAGE_BREAK]&#10;<h2>Trang 2</h2><p>Nội dung trang 2...</p>"></textarea>
+                                <span style="font-size:0.7rem; color:var(--text-muted); margin-top:5px; display:block;">Dùng cú pháp HTML cơ bản và phân tách các trang bằng thẻ dòng mới <b>[PAGE_BREAK]</b>.</span>
+                            </div>
+
+                            <!-- Vùng Nhập URL PDF / File upload -->
+                            <div id="form-content-pdf-group" style="display:none;">
+                                <label class="form-label">Đường dẫn tệp PDF trực tuyến (URL) hoặc chọn file cục bộ</label>
+                                <input type="text" id="form-book-pdf-url" class="form-input" placeholder="Ví dụ: https://arxiv.org/pdf/1706.03762.pdf" style="margin-bottom:10px;">
+                                <input type="file" id="form-book-pdf-file" class="form-input" accept=".pdf" style="padding:8px 12px; font-size:0.8rem;" onchange="handleLocalPDFUpload(event)">
+                                <span style="font-size:0.7rem; color:var(--text-muted); margin-top:5px; display:block;">Cung cấp URL chứa file PDF công khai để render hoặc tải file PDF trực tiếp từ thiết bị của bạn.</span>
+                            </div>
+                        </div>
+                        
+                        <div style="display:flex; gap:15px; margin-top:25px;">
+                            <button type="button" class="btn btn-secondary" style="flex:1;" onclick="closeAddBookModal()">Hủy bỏ</button>
+                            <button type="submit" class="btn btn-primary" style="flex:1;">Lưu tài liệu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Vùng chứa các thông báo Toast -->
+        <div id="toast-container"></div>
+
+    </div>
+
+    <!-- Script loading files sequentially -->
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/viewer.js"></script>
+    <script src="js/flipbook.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
